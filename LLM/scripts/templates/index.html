@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente de Voz em Português</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: border-color 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+        .response-area {
+            display: none;
+            margin-top: 20px;
+        }
+        .processing-indicator {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .audio-player {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .timing-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .timing-bar {
+            height: 20px;
+            margin: 5px 0;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .timing-progress {
+            height: 100%;
+            background-color: #0d6efd;
+            transition: width 0.3s ease;
+        }
+        .timing-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Assistente de Voz em Português</h2>
+                
+                <form id="audioForm" enctype="multipart/form-data">
+                    <div class="upload-area mb-4" id="dropZone">
+                        <div class="mb-3">
+                            <i class="fas fa-microphone fa-3x text-primary"></i>
+                        </div>
+                        <p class="mb-2">Clique para gravar ou arraste um arquivo de áudio</p>
+                        <input type="file" id="audioInput" class="d-none" accept="audio/*">
+                        <button type="button" class="btn btn-primary me-2" id="recordButton">
+                            Gravar Áudio
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="uploadButton">
+                            Upload de Arquivo
+                        </button>
+                    </div>
+                </form>
+
+                <div class="processing-indicator">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Processando...</span>
+                    </div>
+                    <p class="mt-2">Processando seu áudio...</p>
+                </div>
+
+                <div class="response-area">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Transcrição</h5>
+                            <p id="transcriptionText" class="card-text"></p>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Resposta em Áudio</h5>
+                            <audio id="responseAudio" controls class="audio-player">
+                                Seu navegador não suporta o elemento de áudio.
+                            </audio>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Tempos de Processamento</h5>
+                            <div class="timing-info">
+                                <div>
+                                    <div class="timing-label">
+                                        <span>Conversão de Áudio</span>
+                                        <span id="audioConversionTime">0ms</span>
+                                    </div>
+                                    <div class="timing-bar">
+                                        <div class="timing-progress" id="audioConversionBar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-2">
+                                    <div class="timing-label">
+                                        <span>Transcrição (Whisper)</span>
+                                        <span id="transcriptionTime">0ms</span>
+                                    </div>
+                                    <div class="timing-bar">
+                                        <div class="timing-progress" id="transcriptionBar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-2">
+                                    <div class="timing-label">
+                                        <span>Geração de Áudio (TTS)</span>
+                                        <span id="ttsTime">0ms</span>
+                                    </div>
+                                    <div class="timing-bar">
+                                        <div class="timing-progress" id="ttsBar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-2">
+                                    <div class="timing-label">
+                                        <span>Codificação do Áudio</span>
+                                        <span id="encodingTime">0ms</span>
+                                    </div>
+                                    <div class="timing-bar">
+                                        <div class="timing-progress" id="encodingBar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 pt-2 border-top">
+                                    <div class="timing-label">
+                                        <strong>Tempo Total</strong>
+                                        <strong id="totalTime">0ms</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('audioForm');
+            const dropZone = document.getElementById('dropZone');
+            const audioInput = document.getElementById('audioInput');
+            const recordButton = document.getElementById('recordButton');
+            const uploadButton = document.getElementById('uploadButton');
+            const processingIndicator = document.querySelector('.processing-indicator');
+            const responseArea = document.querySelector('.response-area');
+            const transcriptionText = document.getElementById('transcriptionText');
+            const responseAudio = document.getElementById('responseAudio');
+
+            let mediaRecorder = null;
+            let audioChunks = [];
+
+            // Upload de arquivo
+            uploadButton.addEventListener('click', () => {
+                audioInput.click();
+            });
+
+            audioInput.addEventListener('change', handleFileSelect);
+
+            // Drag and drop
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#0d6efd';
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#dee2e6';
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#dee2e6';
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            // Gravação de áudio
+            recordButton.addEventListener('click', async () => {
+                try {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                        recordButton.textContent = 'Gravar Áudio';
+                        recordButton.classList.remove('btn-danger');
+                        recordButton.classList.add('btn-primary');
+                        return;
+                    }
+
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.addEventListener('dataavailable', (event) => {
+                        audioChunks.push(event.data);
+                    });
+
+                    mediaRecorder.addEventListener('stop', () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        handleFile(audioBlob);
+                        stream.getTracks().forEach(track => track.stop());
+                    });
+
+                    mediaRecorder.start();
+                    recordButton.textContent = 'Parar Gravação';
+                    recordButton.classList.remove('btn-primary');
+                    recordButton.classList.add('btn-danger');
+
+                } catch (error) {
+                    console.error('Erro ao acessar o microfone:', error);
+                    alert('Não foi possível acessar o microfone. Verifique as permissões do navegador.');
+                }
+            });
+
+            function handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    handleFile(file);
+                }
+            }
+
+            function updateTimings(timings) {
+                const maxTime = timings.total;
+                
+                // Update times
+                document.getElementById('audioConversionTime').textContent = `${timings.audio_conversion}ms`;
+                document.getElementById('transcriptionTime').textContent = `${timings.transcription}ms`;
+                document.getElementById('ttsTime').textContent = `${timings.tts_generation}ms`;
+                document.getElementById('encodingTime').textContent = `${timings.audio_encoding}ms`;
+                document.getElementById('totalTime').textContent = `${timings.total}ms`;
+                
+                // Update progress bars
+                document.getElementById('audioConversionBar').style.width = `${(timings.audio_conversion / maxTime) * 100}%`;
+                document.getElementById('transcriptionBar').style.width = `${(timings.transcription / maxTime) * 100}%`;
+                document.getElementById('ttsBar').style.width = `${(timings.tts_generation / maxTime) * 100}%`;
+                document.getElementById('encodingBar').style.width = `${(timings.audio_encoding / maxTime) * 100}%`;
+            }
+
+            function handleFile(file) {
+                const formData = new FormData();
+                formData.append('audio', file);
+
+                processingIndicator.style.display = 'block';
+                responseArea.style.display = 'none';
+
+                fetch('/process_audio', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    processingIndicator.style.display = 'none';
+                    responseArea.style.display = 'block';
+                    
+                    transcriptionText.textContent = data.transcription;
+                    responseAudio.src = data.audio_response;
+                    
+                    // Update timing information
+                    if (data.timings) {
+                        updateTimings(data.timings);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Ocorreu um erro ao processar o áudio.');
+                    processingIndicator.style.display = 'none';
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
